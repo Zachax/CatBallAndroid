@@ -13,8 +13,7 @@ public class MainActivity extends Activity {
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
         this.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        gameView = new GameView(this);
-        setContentView(gameView);
+        newGame();
     }
 
     // This method executes when the player starts the game
@@ -33,5 +32,10 @@ public class MainActivity extends Activity {
 
         // Tell the gameView pause method to execute
         gameView.pause();
+    }
+
+    public void newGame() {
+        gameView = new GameView(this);
+        setContentView(gameView);
     }
 }

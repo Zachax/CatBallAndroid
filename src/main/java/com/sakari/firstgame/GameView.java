@@ -15,25 +15,27 @@ import android.view.SurfaceHolder;
 import java.util.ArrayList;
 
 public class GameView extends SurfaceView implements SurfaceHolder.Callback {
+    private MainActivity main; // for restarting the game
     private MainThread thread; // main game thread
     private CharacterSprite characterSprite; // player character
     private float firstTouchX, firstTouchY; // Would be only used with gesture controls active
     private MotionEvent localME; // for continuous control when touchpad is pressed
-    private int screenWidth = Resources.getSystem().getDisplayMetrics().widthPixels;
-    private int screenHeight = Resources.getSystem().getDisplayMetrics().heightPixels;
-    private ArrayList<BallThing> balls = new ArrayList<>(); // balls in the game
-    private int ballCounterDefault = 100; // starting delay of new balls appearing - higher is slower
-    private int ballCounter = ballCounterDefault; // current delay - value keeps decreasing
-    private double points = 0; // player score
-    private double catHits = 1000; // hit points of player
-    private int scoreTextSize = 50; // font size of score text
-    private int scoreX = scoreTextSize / 2; // score text X coordinate
-    private int scoreY = scoreTextSize + scoreTextSize / 4; // score text Y coordinate
-    private Paint scorePaint = new Paint(); // score text color
-    private Paint energyPaint = new Paint(); // energy text color
-    private Paint bgPaint = new Paint(); // background color
-    private int energyBarThickness = 5; // hit points bar thickness
-    private boolean gameOver = false;
+    private int screenWidth; // Screen width
+    private int screenHeight; // Screen height
+    private ArrayList<BallThing> balls; // balls in the game
+    private int ballCounterDefault; // starting delay of new balls appearing - higher is slower
+    private int ballCounter; // current delay - value keeps decreasing
+    private double points; // player score
+    private double catHits; // hit points of player
+    private int scoreTextSize; // font size of score text
+    private int scoreX; // score text X coordinate
+    private int scoreY; // score text Y coordinate
+    private Paint scorePaint; // score text color
+    private Paint energyPaint; // energy text color
+    private Paint bgPaint; // background color
+    private int energyBarThickness; // hit points bar thickness
+    private boolean gameOver; // if tha game is over
+    private int energyGain; // How much bonus energy gained per caught flashy ball.
 
     private final int MAX_BALL_VELOCITY = 15; // spawned ball max speed
     private final int MAX_BALL_RADIUS = 65; // spawned ball max radius
@@ -44,10 +46,31 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
     public GameView(Context context) {
         super(context);
-
+        main = (MainActivity) context;
         getHolder().addCallback(this);
-        thread = new MainThread(getHolder(), this);
         setFocusable(true);
+        init();
+    }
+
+    public void init() {
+        thread = new MainThread(getHolder(), this);
+        screenWidth = Resources.getSystem().getDisplayMetrics().widthPixels;
+        screenHeight = Resources.getSystem().getDisplayMetrics().heightPixels;
+        balls = new ArrayList<>();
+        ballCounterDefault = 100; // higher is slower
+        ballCounter = ballCounterDefault; // value keeps decreasing
+        points = 0;
+        catHits = 1000; // higher is more enduring
+        energyBarThickness = 5;
+        gameOver = false;
+        energyGain = 100; // higher gives more energy
+
+        scoreTextSize = 50; // pixels
+        scoreX = scoreTextSize / 2; // division in order to adjust location not outside screen
+        scoreY = scoreTextSize + scoreTextSize / 4; // division makes sure the text is within screen
+        scorePaint = new Paint();
+        energyPaint = new Paint();
+        bgPaint = new Paint();
         scorePaint.setTextSize(scoreTextSize);
         scorePaint.setColor(Color.RED);
         energyPaint.setColor(Color.GREEN);
@@ -84,7 +107,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         }
     }
 
-    // Contstant updates of the whole game system
+    // Constant updates of the whole game system
     public void update() {
         if (catHits <= 0) {
             gameOver = true;
@@ -106,6 +129,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
                         if (ball.isCollectible()) {
                             ball.setAlive(false);
                             points += (POINT_MODIFIER / ball.getRadius()) * 2;
+                            gainEnergy();
                             System.out.println("Eaten balls: " + points);
                         } else {
                             catHits--;
@@ -153,7 +177,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
                 endText.setTextSize(100);
                 endText.setColor(Color.MAGENTA);
                 canvas.drawText("RIP, meow", screenWidth / 4, screenHeight / 2, endText);
-
+                System.out.println("Still here");
             }
             canvas.drawText("Score: " + (int) points, scoreX, scoreY, scorePaint);
         }
@@ -186,6 +210,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
             // Player has touched the screen
             case MotionEvent.ACTION_DOWN:
+                if (gameOver) {
+                    newGame();
+                }
                 /*
                 firstTouchX = motionEvent.getX();
                 firstTouchY = motionEvent.getY();
@@ -221,6 +248,13 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         }
     }
 
+    /**
+     * Used only if fling controls are used. Currently they are not.
+     * @param x1
+     * @param y1
+     * @param x2
+     * @param y2
+     */
     public void moveCharacterTowards(float x1, float y1, float x2, float y2) {
         characterSprite.addVelocity(x1+x2, y1+y2);
     }
@@ -269,5 +303,18 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         System.out.println("Game over");
         //pause();
         thread.setRunning(false);
+    }
+
+    public void newGame() {
+        System.out.println("Starting a new game");
+        main.newGame();
+    }
+
+    public void gainEnergy() {
+        if (catHits + energyGain >= 2000) {
+            catHits = 2000;
+        } else {
+            catHits += energyGain;
+        }
     }
 }

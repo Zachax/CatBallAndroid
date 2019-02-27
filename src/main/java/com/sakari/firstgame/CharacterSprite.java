@@ -10,7 +10,7 @@ public class CharacterSprite {
     private int x, y; // coordinates
     private float xVelocity = 20; // Speed on X axis
     private float yVelocity = 12; // Speed on Y acis
-    private int responsivity = 100; // Control responsivity delay - higher = more sluggish reaction
+    private int responsivity = 300; // Control responsivity delay - higher = more sluggish reaction
     private float friction = 0.1f; // movement friction
     private final int MAX_VELOCITY = 30; // Maximum velocity
     private GameView gameView; // Main game system
